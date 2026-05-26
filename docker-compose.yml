@@ -63,6 +63,20 @@ services:
       - "traefik.http.routers.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.service=http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend"
       - "traefik.http.services.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.loadbalancer.server.port=80"
 
+  debug:
+    image: alpine:3.19
+    container_name: genkeep_debug
+    restart: "no"
+    networks:
+      - coolify
+    command: >
+      sh -c "echo '=== ip a ===' && ip a;
+             echo '=== resolving coolify-proxy ===' && nslookup coolify-proxy || true;
+             echo '=== wget traefik api routers ===' && wget -qO- http://coolify-proxy:8080/api/http/routers || echo 'FAILED';
+             echo '=== wget traefik api services ===' && wget -qO- http://coolify-proxy:8080/api/http/services || echo 'FAILED';
+             echo '=== ping frontend by hostname ===' && wget -qO- --timeout=5 http://frontend-vg2fuzhhayjm3nwo3cmlznpd-155941755845:80/ | head -c 200 || echo 'cannot reach frontend';
+             sleep 600"
+
 volumes:
   postgres_data:
     driver: local
