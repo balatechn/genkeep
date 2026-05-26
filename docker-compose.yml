@@ -12,8 +12,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-genkeep}"]
       interval: 10s
@@ -38,8 +36,8 @@ services:
       MASTER_ENCRYPTION_KEY: ${MASTER_ENCRYPTION_KEY}
       SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-30}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/api/health"]
       interval: 30s
@@ -56,8 +54,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "3000:80"
+    expose:
+      - "80"
 
 volumes:
   postgres_data:
