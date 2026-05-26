@@ -59,14 +59,13 @@ services:
     expose:
       - "80"
     networks:
-      - coolify
+      coolify:
+        aliases:
+          - genkeep-frontend
     volumes:
       - debug_share:/usr/share/nginx/html/debug
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=coolify"
-      - "traefik.http.routers.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.service=http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend"
-      - "traefik.http.services.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.loadbalancer.server.port=80"
 
   proxy-restarter:
     image: docker:24-cli
@@ -78,30 +77,30 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - debug_share:/share
     command: >
-      sh -c "sleep 30;
+      sh -c "sleep 20;
              OUT=/share/info.txt;
-             echo '=== docker version ===' > $$OUT;
-             docker version --format '{{.Server.Version}}' >> $$OUT 2>&1;
-             echo '=== docker ps frontend ===' >> $$OUT;
-             docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}\t{{.Status}}\t{{.Ports}}' >> $$OUT;
-             FE=$$(docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1);
-             echo \"FE=$$FE\" >> $$OUT;
-             echo '=== Traefik container ===' >> $$OUT;
-             docker ps --filter name=coolify-proxy --format '{{.Names}}\t{{.Status}}\t{{.Image}}' >> $$OUT;
-             echo '=== Traefik container args ===' >> $$OUT;
-             docker inspect coolify-proxy --format '{{range .Args}}{{println .}}{{end}}' >> $$OUT 2>&1;
-             echo '=== Traefik mounts ===' >> $$OUT;
-             docker inspect coolify-proxy --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}' >> $$OUT 2>&1;
-             echo '=== Traefik full logs (all) ===' >> $$OUT;
-             docker logs coolify-proxy 2>&1 | tail -120 >> $$OUT;
-             echo '=== Traefik log file inside? ===' >> $$OUT;
-             docker exec coolify-proxy sh -c 'ls -la /var/log /traefik 2>&1; find / -name "*.log" 2>/dev/null | head -20' >> $$OUT;
-             echo '=== Traefik sees frontend label? (via docker socket) ===' >> $$OUT;
-             docker exec coolify-proxy sh -c 'wget --spider http://127.0.0.1:8080/ 2>&1 | head -3' >> $$OUT;
-             echo '=== Try via coolify-proxy network 80 (raw) ===' >> $$OUT;
+             echo '=== writing traefik file-provider config ===' > $$OUT;
+             docker exec coolify-proxy sh -c 'cat > /traefik/dynamic/genkeep-frontend.yaml <<EOF
+http:
+  routers:
+    genkeep-frontend:
+      rule: \"Host(\\\`vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io\\\`)\"
+      service: genkeep-frontend
+      entryPoints:
+        - http
+      priority: 1000
+  services:
+    genkeep-frontend:
+      loadBalancer:
+        servers:
+          - url: \"http://genkeep-frontend:80\"
+EOF
+ls -la /traefik/dynamic/' >> $$OUT 2>&1;
+             sleep 5;
+             echo '=== test domain via coolify-proxy ===' >> $$OUT;
              wget -qO- --header='Host: vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io' http://coolify-proxy:80/ 2>&1 | head -20 >> $$OUT;
-             echo '=== Try frontend by service alias from same network ===' >> $$OUT;
-             wget -qO- http://$$FE:80/ 2>&1 | head -10 >> $$OUT;
+             echo '=== traefik logs last 60 ===' >> $$OUT;
+             docker logs --tail 60 coolify-proxy >> $$OUT 2>&1;
              chmod 644 $$OUT;
              sleep 5"
 
