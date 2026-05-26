@@ -56,7 +56,13 @@ services:
       - backend
     expose:
       - "80"
+    networks:
+      - coolify
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  coolify:
+    external: true
