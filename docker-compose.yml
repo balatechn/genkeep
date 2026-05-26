@@ -75,32 +75,21 @@ services:
       - frontend
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /data/coolify/proxy/dynamic:/traefik-dynamic
+      - ./traefik-dynamic/genkeep-frontend.yaml:/srv/genkeep-frontend.yaml:ro
       - debug_share:/share
     command: >
-      sh -c "sleep 20;
+      sh -c "sleep 15;
              OUT=/share/info.txt;
-             echo '=== writing traefik file-provider config ===' > $$OUT;
-             docker exec coolify-proxy sh -c 'cat > /traefik/dynamic/genkeep-frontend.yaml <<EOF
-http:
-  routers:
-    genkeep-frontend:
-      rule: \"Host(\\\`vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io\\\`)\"
-      service: genkeep-frontend
-      entryPoints:
-        - http
-      priority: 1000
-  services:
-    genkeep-frontend:
-      loadBalancer:
-        servers:
-          - url: \"http://genkeep-frontend:80\"
-EOF
-ls -la /traefik/dynamic/' >> $$OUT 2>&1;
+             echo '=== copying traefik file-provider config ===' > $$OUT;
+             cp /srv/genkeep-frontend.yaml /traefik-dynamic/genkeep-frontend.yaml;
+             ls -la /traefik-dynamic/ >> $$OUT 2>&1;
+             cat /traefik-dynamic/genkeep-frontend.yaml >> $$OUT 2>&1;
              sleep 5;
-             echo '=== test domain via coolify-proxy ===' >> $$OUT;
-             wget -qO- --header='Host: vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io' http://coolify-proxy:80/ 2>&1 | head -20 >> $$OUT;
-             echo '=== traefik logs last 60 ===' >> $$OUT;
-             docker logs --tail 60 coolify-proxy >> $$OUT 2>&1;
+             echo '=== test via coolify-proxy:80 ===' >> $$OUT;
+             wget -qSO- --header='Host: vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io' http://coolify-proxy:80/ 2>&1 | head -30 >> $$OUT;
+             echo '=== traefik logs last 80 ===' >> $$OUT;
+             docker logs --tail 80 coolify-proxy >> $$OUT 2>&1;
              chmod 644 $$OUT;
              sleep 5"
 

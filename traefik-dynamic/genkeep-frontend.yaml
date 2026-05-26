@@ -1,0 +1,13 @@
+http:
+  routers:
+    genkeep-frontend:
+      rule: "Host(`vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io`)"
+      service: genkeep-frontend
+      entryPoints:
+        - http
+      priority: 1000
+  services:
+    genkeep-frontend:
+      loadBalancer:
+        servers:
+          - url: "http://genkeep-frontend:80"
