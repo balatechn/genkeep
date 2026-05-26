@@ -80,19 +80,23 @@ services:
     command: >
       sh -c "sleep 30;
              OUT=/share/info.txt;
-             echo '=== docker ps frontend ===' > $$OUT;
+             echo '=== docker version ===' > $$OUT;
+             docker version --format '{{.Server.Version}}' >> $$OUT 2>&1;
+             echo '=== docker ps frontend ===' >> $$OUT;
              docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}\t{{.Status}}\t{{.Ports}}' >> $$OUT;
              FE=$$(docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1);
              echo \"FE=$$FE\" >> $$OUT;
-             echo '=== frontend container Labels ===' >> $$OUT;
-             docker inspect $$FE --format '{{range $$k, $$v := .Config.Labels}}{{$$k}}={{$$v}}{{println}}{{end}}' >> $$OUT 2>&1;
-             echo '=== frontend Networks ===' >> $$OUT;
-             docker inspect $$FE --format '{{range $$k, $$v := .NetworkSettings.Networks}}{{$$k}} ip={{$$v.IPAddress}}{{println}}{{end}}' >> $$OUT 2>&1;
-             echo '=== Traefik routers (via :80 path /api/) ===' >> $$OUT;
-             docker exec coolify-proxy wget -qO- --header='Host: traefik.local' http://localhost:80/api/http/routers >> $$OUT 2>&1 || echo 'wget1 failed' >> $$OUT;
-             docker exec coolify-proxy wget -qO- http://127.0.0.1:8080/api/http/routers >> $$OUT 2>&1 || echo 'wget2 failed' >> $$OUT;
-             echo '=== Traefik logs tail ===' >> $$OUT;
-             docker logs --tail 80 coolify-proxy >> $$OUT 2>&1;
+             echo '=== Traefik container ===' >> $$OUT;
+             docker ps --filter name=coolify-proxy --format '{{.Names}}\t{{.Status}}\t{{.Image}}' >> $$OUT;
+             echo '=== Traefik full logs (since 10m ago) ===' >> $$OUT;
+             docker logs --since 10m coolify-proxy 2>&1 | tail -100 >> $$OUT;
+             echo '=== Traefik debug provider state ===' >> $$OUT;
+             docker exec coolify-proxy sh -c 'wget -qO- http://127.0.0.1:8080/api/rawdata 2>&1 || echo NO_API_8080' >> $$OUT;
+             docker exec coolify-proxy sh -c 'netstat -tlnp 2>&1 || ss -tlnp 2>&1 || echo NO_NETSTAT' >> $$OUT;
+             echo '=== Try via coolify-proxy network 80 (raw) ===' >> $$OUT;
+             wget -qO- --header='Host: vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io' http://coolify-proxy:80/ 2>&1 | head -20 >> $$OUT;
+             echo '=== Try frontend by service alias from same network ===' >> $$OUT;
+             wget -qO- http://$$FE:80/ 2>&1 | head -10 >> $$OUT;
              chmod 644 $$OUT;
              sleep 5"
 
