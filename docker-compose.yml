@@ -56,12 +56,20 @@ services:
       - backend
     expose:
       - "80"
+    networks:
+      - default
+      - coolify
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.vg2fuzhhayjm3nwo3cmlznpd.rule=Host(`vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io`)"
       - "traefik.http.routers.vg2fuzhhayjm3nwo3cmlznpd.entryPoints=http"
       - "traefik.http.services.vg2fuzhhayjm3nwo3cmlznpd.loadbalancer.server.port=80"
+      - "traefik.docker.network=coolify"
 
 volumes:
   postgres_data:
     driver: local
+
+networks:
+  coolify:
+    external: true
