@@ -56,6 +56,11 @@ services:
       - backend
     expose:
       - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vg2fuzhhayjm3nwo3cmlznpd.rule=Host(`vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io`)"
+      - "traefik.http.routers.vg2fuzhhayjm3nwo3cmlznpd.entryPoints=http"
+      - "traefik.http.services.vg2fuzhhayjm3nwo3cmlznpd.loadbalancer.server.port=80"
 
 volumes:
   postgres_data:
