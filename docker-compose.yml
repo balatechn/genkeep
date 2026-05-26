@@ -61,6 +61,20 @@ services:
     networks:
       - coolify
 
+  proxy-restarter:
+    image: docker:24-cli
+    container_name: genkeep_proxy_restarter
+    restart: "no"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: >
+      sh -c "echo '=== Inspecting frontend container labels ==='; docker inspect frontend-vg2fuzhhayjm3nwo3cmlznpd-$(date +%H%M%S)* 2>/dev/null | head -200 || docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1 | xargs -I {} docker inspect {} | head -200;
+             echo '=== Networks of frontend container ==='; docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1 | xargs -I {} docker inspect {} --format '{{json .NetworkSettings.Networks}}';
+             echo '=== Traefik http routers ==='; docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/routers 2>&1 | head -200;
+             echo '=== Traefik http services ==='; docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/services 2>&1 | head -200;
+             echo '=== Restarting coolify-proxy ==='; docker restart coolify-proxy;
+             echo '=== Done ==='"
+
 volumes:
   postgres_data:
     driver: local
