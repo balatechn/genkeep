@@ -62,6 +62,11 @@ services:
       - coolify
     volumes:
       - debug_share:/usr/share/nginx/html/debug
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=coolify"
+      - "traefik.http.routers.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.service=http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend"
+      - "traefik.http.services.http-0-vg2fuzhhayjm3nwo3cmlznpd-frontend.loadbalancer.server.port=80"
 
   proxy-restarter:
     image: docker:24-cli
