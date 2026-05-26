@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sidebar-width: 260px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    @apply font-sans antialiased;
+  }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-slate-600 rounded-full; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium px-4 py-2 rounded-lg
+           transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 text-white font-medium px-4 py-2 rounded-lg
+           transition-colors duration-150 disabled:opacity-50;
+  }
+  .btn-danger {
+    @apply bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg
+           transition-colors duration-150;
+  }
+  .btn-ghost {
+    @apply text-slate-300 hover:text-white hover:bg-slate-700 font-medium px-4 py-2 rounded-lg
+           transition-colors duration-150;
+  }
+  .card {
+    @apply bg-dark-800 border border-slate-700/50 rounded-xl p-6;
+  }
+  .input {
+    @apply w-full bg-dark-900 border border-slate-600 rounded-lg px-3 py-2 text-white
+           placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary-500
+           focus:border-transparent transition-all duration-150;
+  }
+  .label {
+    @apply block text-sm font-medium text-slate-300 mb-1;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+}

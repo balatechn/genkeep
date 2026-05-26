@@ -1,0 +1,12 @@
+.env
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+*.local
+coverage/
+.nyc_output/
+*.pem
+*.key
