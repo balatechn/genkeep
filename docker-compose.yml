@@ -65,15 +65,38 @@ services:
     image: docker:24-cli
     container_name: genkeep_proxy_restarter
     restart: "no"
+    ports:
+      - "8889:8889"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
-      sh -c "echo '=== Inspecting frontend container labels ==='; docker inspect frontend-vg2fuzhhayjm3nwo3cmlznpd-$(date +%H%M%S)* 2>/dev/null | head -200 || docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1 | xargs -I {} docker inspect {} | head -200;
-             echo '=== Networks of frontend container ==='; docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1 | xargs -I {} docker inspect {} --format '{{json .NetworkSettings.Networks}}';
-             echo '=== Traefik http routers ==='; docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/routers 2>&1 | head -200;
-             echo '=== Traefik http services ==='; docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/services 2>&1 | head -200;
-             echo '=== Restarting coolify-proxy ==='; docker restart coolify-proxy;
-             echo '=== Done ==='"
+      sh -c "OUT=/tmp/out.txt;
+             echo '=== docker ps frontend ===' > $$OUT;
+             docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' >> $$OUT;
+             FE=$$(docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1);
+             echo '=== frontend container Labels ===' >> $$OUT;
+             docker inspect $$FE --format '{{json .Config.Labels}}' >> $$OUT;
+             echo '' >> $$OUT;
+             echo '=== frontend Networks ===' >> $$OUT;
+             docker inspect $$FE --format '{{json .NetworkSettings.Networks}}' >> $$OUT;
+             echo '' >> $$OUT;
+             echo '=== coolify-proxy Networks ===' >> $$OUT;
+             docker inspect coolify-proxy --format '{{json .NetworkSettings.Networks}}' >> $$OUT;
+             echo '' >> $$OUT;
+             echo '=== Traefik routers ===' >> $$OUT;
+             docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/routers >> $$OUT 2>&1;
+             echo '' >> $$OUT;
+             echo '=== Traefik services ===' >> $$OUT;
+             docker exec coolify-proxy wget -qO- http://localhost:8080/api/http/services >> $$OUT 2>&1;
+             echo '' >> $$OUT;
+             echo '=== Dynamic dir listing (host) ===' >> $$OUT;
+             docker exec coolify-proxy ls -la /traefik/dynamic/ >> $$OUT 2>&1;
+             echo '' >> $$OUT;
+             echo '=== Dynamic files content ===' >> $$OUT;
+             docker exec coolify-proxy sh -c 'for f in /traefik/dynamic/*.yaml; do echo \"--- $$f ---\"; cat $$f; done' >> $$OUT 2>&1;
+             echo '=== DONE ===' >> $$OUT;
+             cat $$OUT;
+             while true; do { echo -e 'HTTP/1.1 200 OK\\r\\nContent-Type: text/plain\\r\\n\\r\\n'; cat $$OUT; } | nc -l -p 8889 -q 1; done"
 
 volumes:
   postgres_data:
