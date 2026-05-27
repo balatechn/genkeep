@@ -1,5 +1,57 @@
 import crypto from 'crypto';
 
+// ─── Dessert / Sweet-dish word lists ─────────────────────────────────────────
+
+const DESSERTS = [
+  'Tiramisu','Macaron','Brownie','Croissant','Cheesecake','Pavlova','Eclair',
+  'Profiterole','Madeleine','Mille-Feuille','CremeBrulee','PannaCotta',
+  'Baklava','Halva','Gulab-Jamun','Rasgulla','Jalebi','Kheer','Ladoo',
+  'Barfi','Halwa','Kulfi','Shrikhand','Modak','Peda','Imarti','Rabri',
+  'Sandesh','Mishti-Doi','Kaaju-Katli','Churros','Flan','Alfajor',
+  'Brigadeiro','Tres-Leches','Churro','Mochi','Dorayaki','Taiyaki',
+  'Anmitsu','Daifuku','Castella','Youkan','Waffles','Stroopwafel',
+  'Speculoos','Oliebollen','Hagelslag','Prinsestaart','Cannoli',
+  'Panna','Sfogliatella','Granita','Zabaglione','Torrone','Panettone',
+  'Strudel','Sachertorte','Linzertorte','Palatschinken','Knafeh',
+  'Basbousa','Kunafa','Muhallebi','Luqaimat','Lokma','Kadayif',
+  'Sfouf','Mamoul','Asure','Ghorayeba','Baba-au-Rhum','Crepe',
+  'Gateau','Mousse','Soufflé','Tarte-Tatin','Clafoutis','Mille-Crepe',
+  'Fondant','Opera-Cake','Financier','Canele','Tuile','Chouquette',
+  'Merveilleux','Paris-Brest','Mont-Blanc','Fraisier','Charlotte',
+  'Profiteroles','Galette','Kouign-Amann','Brioche','Pain-Perdu',
+  'Churinga','Pavlova','Meringue','Amaretti','Pizelle','Biscotti',
+  'Gelato','Semifreddo','Cassata','Zabaione','Budino','Semifreddo',
+  'Pudding','Trifle','Eton-Mess','Syllabub','Blancmange','Crumble',
+  'Treacle-Tart','Bakewell','Banoffee','Eton-Mess','Scone','Fudge',
+  'Shortbread','Dundee-Cake','Victoria-Sponge','Swiss-Roll',
+  'Lamington','Pavlova','Tim-Tam','Anzac','Caramel-Slice','Sticky-Date',
+  'Pecan-Pie','Key-Lime','Cheesecake','Red-Velvet','Carrot-Cake',
+  'Hummingbird','Boston-Cream','Devil-Food','Angel-Food','Funnel-Cake',
+  'Beignet','Praline','Divinity','Peanut-Brittle','Saltwater-Taffy',
+  'Cotton-Candy','Rock-Candy','Marshmallow','Nougat','Toffee',
+  'Butterscotch','Caramel','Truffle','Ganache','Bonbon',
+];
+
+const DESSERT_SYMBOLS = ['@', '#', '!', '$', '*', '&', '%'];
+const DESSERT_ADJECTIVES = [
+  'Sweet','Rich','Dark','Golden','Fluffy','Crispy','Silky','Creamy',
+  'Luscious','Warm','Velvety','Sugary','Fudgy','Gooey','Glazed',
+];
+
+export function generateDessertPassword(): string {
+  const dessert = DESSERTS[randomInt(DESSERTS.length)];
+  // optionally prepend an adjective (~40% chance)
+  const name = randomInt(10) < 4
+    ? DESSERT_ADJECTIVES[randomInt(DESSERT_ADJECTIVES.length)] + dessert
+    : dessert;
+  const digits = String(randomInt(900) + 100); // 3-digit number
+  const sym = DESSERT_SYMBOLS[randomInt(DESSERT_SYMBOLS.length)];
+  // Shuffle symbol position: prefix or suffix
+  return randomInt(2) === 0 ? `${name}${sym}${digits}` : `${name}${digits}${sym}`;
+}
+
+// ─── Standard random password ─────────────────────────────────────────────────
+
 export interface GeneratorOptions {
   length?: number;
   uppercase?: boolean;

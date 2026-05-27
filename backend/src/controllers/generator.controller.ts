@@ -1,9 +1,14 @@
 import { Response, NextFunction } from 'express';
-import { generatePassword, GeneratorOptions } from '../services/generator.service';
+import { generatePassword, generateDessertPassword, GeneratorOptions } from '../services/generator.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 export function generate(req: AuthRequest, res: Response, next: NextFunction): void {
   try {
+    if (req.body.type === 'dessert') {
+      const password = generateDessertPassword();
+      res.json({ password, type: 'dessert' });
+      return;
+    }
     const options: GeneratorOptions = {
       length:       parseInt(req.body.length) || 16,
       uppercase:    req.body.uppercase !== false,

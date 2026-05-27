@@ -55,6 +55,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 
 export default function GeneratorPage() {
+  const [mode, setMode] = useState<'standard' | 'dessert'>('standard');
   const [options, setOptions] = useState({
     length: 16, uppercase: true, lowercase: true, numbers: true, symbols: true, avoidSimilar: false,
   });
@@ -76,11 +77,13 @@ export default function GeneratorPage() {
   const generate = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await toolsApi.generatePassword(options);
+      const r = await toolsApi.generatePassword(
+        mode === 'dessert' ? { type: 'dessert' } as never : options
+      );
       setPassword(r.data.password);
     } catch { toast.error('Generation failed'); }
     finally { setLoading(false); }
-  }, [options]);
+  }, [options, mode]);
 
   async function handleCopy() {
     await copyToClipboard(password);
@@ -126,6 +129,23 @@ export default function GeneratorPage() {
       <main className="flex-1 p-4 sm:p-6">
         <div className="max-w-lg mx-auto space-y-4 sm:space-y-6">
           <Card title="Password Generator">
+            {/* Mode selector */}
+            <div className="flex gap-2 p-1 bg-dark-950 rounded-xl mb-4 border border-slate-800">
+              {(['standard', 'dessert'] as const).map(m => (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); setPassword(''); }}
+                  className={cn(
+                    'flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all',
+                    mode === m
+                      ? 'bg-primary-600 text-white shadow'
+                      : 'text-slate-400 hover:text-slate-200'
+                  )}
+                >
+                  {m === 'standard' ? '🔐 Standard' : '🍰 Dessert Name'}
+                </button>
+              ))}
+            </div>
             {/* Name / URL + Login ID */}
             <div className="space-y-3 mb-4">
               <Input
@@ -155,25 +175,34 @@ export default function GeneratorPage() {
 
             {password && <StrengthBar password={password} />}
 
-            <div className="mt-4">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-slate-300">Length</span>
-                <span className="text-sm font-mono text-primary-400">{options.length}</span>
+            {mode === 'standard' ? (
+              <>
+                <div className="mt-4">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-sm text-slate-300">Length</span>
+                    <span className="text-sm font-mono text-primary-400">{options.length}</span>
+                  </div>
+                  <input
+                    type="range" min={6} max={64} value={options.length}
+                    onChange={e => set('length')(parseInt(e.target.value))}
+                    className="w-full accent-primary-500"
+                  />
+                </div>
+                <div className="mt-4 divide-y divide-slate-800">
+                  <Toggle label="Uppercase (A–Z)"   checked={options.uppercase}    onChange={set('uppercase')} />
+                  <Toggle label="Lowercase (a–z)"   checked={options.lowercase}    onChange={set('lowercase')} />
+                  <Toggle label="Numbers (0–9)"     checked={options.numbers}      onChange={set('numbers')} />
+                  <Toggle label="Symbols (!@#$…)"   checked={options.symbols}      onChange={set('symbols')} />
+                  <Toggle label="Avoid similar chars (0,O,1,l)" checked={options.avoidSimilar} onChange={set('avoidSimilar')} />
+                </div>
+              </>
+            ) : (
+              <div className="mt-4 bg-amber-900/20 border border-amber-700/40 rounded-xl p-4 text-sm text-amber-200/80 space-y-1">
+                <p className="font-semibold text-amber-300">🍩 Dessert Name passwords</p>
+                <p>Generates a memorable password built from a random sweet-dish name (Tiramisu, Baklava, Mochi…) combined with a 3-digit number and a symbol.</p>
+                <p className="font-mono text-xs text-amber-400/80 mt-2">e.g. CreamyBrownie@472 · Mochi!839 · GoldenBarfi$215</p>
               </div>
-              <input
-                type="range" min={6} max={64} value={options.length}
-                onChange={e => set('length')(parseInt(e.target.value))}
-                className="w-full accent-primary-500"
-              />
-            </div>
-
-            <div className="mt-4 divide-y divide-slate-800">
-              <Toggle label="Uppercase (A–Z)"   checked={options.uppercase}    onChange={set('uppercase')} />
-              <Toggle label="Lowercase (a–z)"   checked={options.lowercase}    onChange={set('lowercase')} />
-              <Toggle label="Numbers (0–9)"     checked={options.numbers}      onChange={set('numbers')} />
-              <Toggle label="Symbols (!@#$…)"   checked={options.symbols}      onChange={set('symbols')} />
-              <Toggle label="Avoid similar chars (0,O,1,l)" checked={options.avoidSimilar} onChange={set('avoidSimilar')} />
-            </div>
+            )}
 
             <div className="flex gap-3 mt-6">
               <Button className="flex-1 justify-center" loading={loading} icon={<Wand2 className="w-4 h-4" />} onClick={generate}>
