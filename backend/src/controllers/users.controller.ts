@@ -35,9 +35,10 @@ export async function createUser(req: AuthRequest, res: Response, next: NextFunc
 
 export async function updateUser(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { name, role, isActive, password } = req.body;
+    const { name, email, role, isActive, password } = req.body;
     const data: Record<string, unknown> = {};
     if (name) data.name = name;
+    if (email) data.email = email;
     if (role) data.role = role;
     if (isActive !== undefined) data.isActive = isActive;
     if (password) data.passwordHash = await bcrypt.hash(password, 12);
