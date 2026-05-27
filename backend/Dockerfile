@@ -27,7 +27,17 @@ RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 EXPOSE 4000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s \
   CMD wget --quiet --tries=1 --spider http://localhost:4000/api/health || exit 1
 
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/index.js"]
+# Wait for postgres then push schema + start server
+CMD ["sh", "-c", "\
+  echo 'Waiting for postgres...'; \
+  until nc -z postgres 5432 2>/dev/null; do sleep 2; done; \
+  echo 'Postgres ready. Pushing schema...'; \
+  i=0; while ! ./node_modules/.bin/prisma db push --accept-data-loss --skip-generate; do \
+    i=$((i+1)); if [ $i -ge 15 ]; then echo 'Schema push failed, giving up'; exit 1; fi; \
+    echo \"Schema push failed (attempt $i), retrying in 3s...\"; sleep 3; \
+  done; \
+  echo 'Schema ready. Starting server...'; \
+  node dist/index.js"]

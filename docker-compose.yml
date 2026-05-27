@@ -17,14 +17,22 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    expose:
+      - "6379"
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
+      - redis
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -34,6 +42,7 @@ services:
       MASTER_ENCRYPTION_KEY: ${MASTER_ENCRYPTION_KEY}
       SESSION_TIMEOUT_MINUTES: ${SESSION_TIMEOUT_MINUTES:-30}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      REDIS_URL: redis://redis:6379
     expose:
       - "4000"
     healthcheck:
@@ -41,6 +50,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   frontend:
     build:
@@ -67,7 +77,7 @@ services:
     depends_on:
       - frontend
     environment:
-      TRAEFIK_CONFIG_B64: "aHR0cDoNCiAgcm91dGVyczoNCiAgICBnZW5rZWVwLWZyb250ZW5kOg0KICAgICAgcnVsZTogIkhvc3QoYHZnMmZ1emhoYXlqbTNud28zY21sem5wZC4xODcuMTI3LjEzNC4yNDYuc3NsaXAuaW9gKSINCiAgICAgIHNlcnZpY2U6IGdlbmtlZXAtZnJvbnRlbmQNCiAgICAgIGVudHJ5UG9pbnRzOg0KICAgICAgICAtIGh0dHANCiAgICAgIHByaW9yaXR5OiAxMDAwDQogIHNlcnZpY2VzOg0KICAgIGdlbmtlZXAtZnJvbnRlbmQ6DQogICAgICBsb2FkQmFsYW5jZXI6DQogICAgICAgIHNlcnZlcnM6DQogICAgICAgICAgLSB1cmw6ICJodHRwOi8vZ2Vua2VlcC1mcm9udGVuZDo4MCINCg=="
+      TRAEFIK_CONFIG_B64: "aHR0cDoKICByb3V0ZXJzOgogICAgZ2Vua2VlcC1mcm9udGVuZDoKICAgICAgcnVsZTogIkhvc3QoYHZnMmZ1emhoYXlqbTNud28zY21sem5wZC4xODcuMTI3LjEzNC4yNDYuc3NsaXAuaW9gKSIKICAgICAgc2VydmljZTogZ2Vua2VlcC1mcm9udGVuZAogICAgICBlbnRyeVBvaW50czoKICAgICAgICAtIGh0dHAKICAgICAgcHJpb3JpdHk6IDEwMDAKICAgIGdlbmtlZXAtbjhuOgogICAgICBydWxlOiAiSG9zdChgbjhuLjE4Ny4xMjcuMTM0LjI0Ni5zc2xpcC5pb2ApIgogICAgICBzZXJ2aWNlOiBnZW5rZWVwLW44bgogICAgICBlbnRyeVBvaW50czoKICAgICAgICAtIGh0dHAKICAgICAgcHJpb3JpdHk6IDEwMDAKICBzZXJ2aWNlczoKICAgIGdlbmtlZXAtZnJvbnRlbmQ6CiAgICAgIGxvYWRCYWxhbmNlcjoKICAgICAgICBzZXJ2ZXJzOgogICAgICAgICAgLSB1cmw6ICJodHRwOi8vZ2Vua2VlcC1mcm9udGVuZDo4MCIKICAgIGdlbmtlZXAtbjhuOgogICAgICBsb2FkQmFsYW5jZXI6CiAgICAgICAgc2VydmVyczoKICAgICAgICAgIC0gdXJsOiAiaHR0cDovL244bjo1Njc4Ig0K"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: >
@@ -76,8 +86,53 @@ services:
              docker exec coolify-proxy rm -rf /traefik/dynamic/genkeep-frontend.yaml 2>/dev/null;
              docker cp /tmp/cfg.yaml coolify-proxy:/traefik/dynamic/genkeep-frontend.yaml && echo 'traefik config installed' || echo 'install failed';"
 
+  postgres-n8n:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: n8n
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-n8n_secret}
+    volumes:
+      - postgres_n8n_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      - postgres-n8n
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres-n8n
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-n8n_secret}
+      N8N_HOST: n8n.187.127.134.246.sslip.io
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://n8n.187.127.134.246.sslip.io
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-changeme_please_replace}
+      GENERIC_TIMEZONE: UTC
+    expose:
+      - "5678"
+    networks:
+      coolify:
+        aliases:
+          - n8n
+      default: {}
+
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  postgres_n8n_data:
     driver: local
 
 networks:
