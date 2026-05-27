@@ -54,22 +54,18 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
-    ports:
-      - "8888:80"
     expose:
       - "80"
     networks:
       coolify:
         aliases:
           - genkeep-frontend
-    volumes:
-      - debug_share:/usr/share/nginx/html/debug
     labels:
       - "traefik.enable=true"
 
-  proxy-restarter:
+  traefik-config-loader:
     image: docker:24-cli
-    container_name: genkeep_proxy_restarter
+    container_name: genkeep_traefik_loader
     restart: "no"
     depends_on:
       - frontend
@@ -77,29 +73,13 @@ services:
       TRAEFIK_CONFIG_B64: "aHR0cDoNCiAgcm91dGVyczoNCiAgICBnZW5rZWVwLWZyb250ZW5kOg0KICAgICAgcnVsZTogIkhvc3QoYHZnMmZ1emhoYXlqbTNud28zY21sem5wZC4xODcuMTI3LjEzNC4yNDYuc3NsaXAuaW9gKSINCiAgICAgIHNlcnZpY2U6IGdlbmtlZXAtZnJvbnRlbmQNCiAgICAgIGVudHJ5UG9pbnRzOg0KICAgICAgICAtIGh0dHANCiAgICAgIHByaW9yaXR5OiAxMDAwDQogIHNlcnZpY2VzOg0KICAgIGdlbmtlZXAtZnJvbnRlbmQ6DQogICAgICBsb2FkQmFsYW5jZXI6DQogICAgICAgIHNlcnZlcnM6DQogICAgICAgICAgLSB1cmw6ICJodHRwOi8vZ2Vua2VlcC1mcm9udGVuZDo4MCINCg=="
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - debug_share:/share
     command: >
-      sh -c "sleep 15;
-             OUT=/share/info.txt;
+      sh -c "sleep 10;
              echo \"$$TRAEFIK_CONFIG_B64\" | base64 -d > /tmp/cfg.yaml;
-             echo '=== cfg.yaml ===' > $$OUT;
-             cat /tmp/cfg.yaml >> $$OUT;
-             echo '=== docker cp into coolify-proxy ===' >> $$OUT;
-             docker exec coolify-proxy rm -rf /traefik/dynamic/genkeep-frontend.yaml >> $$OUT 2>&1;
-             docker cp /tmp/cfg.yaml coolify-proxy:/traefik/dynamic/genkeep-frontend.yaml >> $$OUT 2>&1 && echo 'cp ok' >> $$OUT || echo \"cp failed $$?\" >> $$OUT;
-             docker exec coolify-proxy ls -la /traefik/dynamic/ >> $$OUT 2>&1;
-             docker exec coolify-proxy cat /traefik/dynamic/genkeep-frontend.yaml >> $$OUT 2>&1;
-             sleep 6;
-             echo '=== test via coolify-proxy ===' >> $$OUT;
-             wget -qSO- --header='Host: vg2fuzhhayjm3nwo3cmlznpd.187.127.134.246.sslip.io' http://coolify-proxy:80/ 2>&1 | head -40 >> $$OUT;
-             echo '=== traefik logs tail 80 ===' >> $$OUT;
-             docker logs --tail 80 coolify-proxy >> $$OUT 2>&1;
-             chmod 644 $$OUT;
-             sleep 5"
+             docker exec coolify-proxy rm -rf /traefik/dynamic/genkeep-frontend.yaml 2>/dev/null;
+             docker cp /tmp/cfg.yaml coolify-proxy:/traefik/dynamic/genkeep-frontend.yaml && echo 'traefik config installed' || echo 'install failed';"
 
 volumes:
-  debug_share:
-    driver: local
   postgres_data:
     driver: local
 
