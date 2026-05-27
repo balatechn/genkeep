@@ -15,9 +15,11 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
-# Copy pre-built Prisma engines from builder so runtime never needs to generate/write them
+# Copy pre-built Prisma engines + CLI from builder (prisma is a devDep, not installed by npm ci --omit=dev)
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 COPY prisma ./prisma
 # Fix ownership so nodeuser can read all app files
 RUN chown -R nodeuser:nodejs /app
@@ -28,4 +30,4 @@ EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
   CMD wget --quiet --tries=1 --spider http://localhost:4000/api/health || exit 1
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/index.js"]
