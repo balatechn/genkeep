@@ -123,8 +123,8 @@ export default function GeneratorPage() {
   return (
     <>
       <Topbar title="Password Generator" />
-      <main className="flex-1 p-6">
-        <div className="max-w-lg mx-auto space-y-6">
+      <main className="flex-1 p-4 sm:p-6">
+        <div className="max-w-lg mx-auto space-y-4 sm:space-y-6">
           <Card title="Password Generator">
             {/* Name / URL + Login ID */}
             <div className="space-y-3 mb-4">

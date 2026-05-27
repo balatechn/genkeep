@@ -93,7 +93,88 @@ function CredentialRow({ cred, onEdit, onDelete, isAdmin }: {
   );
 }
 
-function CredentialForm({ initial, entities, onSave, onClose }: {
+function CredentialCard({ cred, onEdit, onDelete, isAdmin }: {
+  cred: Credential; onEdit: () => void; onDelete: () => void; isAdmin: boolean;
+}) {
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [revealing, setRevealing] = useState(false);
+
+  async function handleReveal() {
+    if (revealed) { setRevealed(null); return; }
+    setRevealing(true);
+    try {
+      const r = await credentialsApi.reveal(cred.id);
+      setRevealed(r.data.password);
+      setTimeout(() => setRevealed(null), 30000);
+    } catch { toast.error('Failed to reveal'); }
+    finally { setRevealing(false); }
+  }
+
+  async function handleCopy() {
+    setRevealing(true);
+    try {
+      const r = await credentialsApi.reveal(cred.id);
+      await copyToClipboard(r.data.password);
+      toast.success('Copied! Clears in 20s');
+    } catch { toast.error('Failed to copy'); }
+    finally { setRevealing(false); }
+  }
+
+  return (
+    <div className="bg-dark-900 border border-slate-700/50 rounded-xl p-4 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-semibold text-white truncate">{cred.title}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{cred.entity?.name} · <span className="text-slate-500">{cred.entity?.entityType?.label}</span></p>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          <button onClick={onEdit} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+            <Pencil className="w-4 h-4" />
+          </button>
+          {isAdmin && (
+            <button onClick={onDelete} className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {cred.urlOrIp && (
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate font-mono">{cred.urlOrIp}</span>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-slate-400 text-xs w-16 shrink-0">Username</span>
+        <span className="text-slate-200 truncate font-mono text-xs">{cred.username}</span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-slate-400 text-xs w-16 shrink-0">Password</span>
+        <span className="font-mono text-xs text-slate-200 flex-1 truncate">
+          {revealed ? revealed : '••••••••••••'}
+        </span>
+        <button onClick={handleReveal} disabled={revealing} className="p-1.5 text-slate-400 hover:text-white">
+          {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+        <button onClick={handleCopy} disabled={revealing} className="p-1.5 text-primary-400 hover:text-primary-300">
+          <Copy className="w-4 h-4" />
+        </button>
+      </div>
+
+      {cred.expiryDate && (
+        <div className="flex items-center gap-2">
+          <span className="text-slate-400 text-xs w-16 shrink-0">Expiry</span>
+          <Badge variant={isExpired(cred.expiryDate) ? 'danger' : isExpiringSoon(cred.expiryDate, 7) ? 'warning' : 'success'}>
+            {formatDate(cred.expiryDate)}
+          </Badge>
+        </div>
+      )}
+    </div>
+  );
+}
   initial?: Credential; entities: Entity[]; onSave: (data: unknown) => void; onClose: () => void;
 }) {
   const [form, setForm] = useState({
@@ -196,13 +277,13 @@ export default function VaultPage() {
   return (
     <>
       <Topbar title="Password Vault" />
-      <main className="flex-1 p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          <div className="relative">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+          <div className="relative flex-1 sm:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input className="input pl-9 w-72" placeholder="Search credentials…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+            <input className="input pl-9 w-full" placeholder="Search credentials…" value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
           </div>
-          <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setEditing(undefined); setModalOpen(true); }}>
+          <Button icon={<Plus className="w-4 h-4" />} className="shrink-0" onClick={() => { setEditing(undefined); setModalOpen(true); }}>
             Add Credential
           </Button>
         </div>
@@ -219,7 +300,21 @@ export default function VaultPage() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile card list */}
+              <div className="sm:hidden space-y-3">
+                {data.data.map(cred => (
+                  <CredentialCard
+                    key={cred.id}
+                    cred={cred}
+                    isAdmin={user?.role === 'ADMIN'}
+                    onEdit={() => { setEditing(cred); setModalOpen(true); }}
+                    onDelete={() => deleteMut.mutate(cred.id)}
+                  />
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-700">
@@ -245,10 +340,11 @@ export default function VaultPage() {
                   </tbody>
                 </table>
               </div>
+
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-slate-700 mt-4">
                   <span className="text-sm text-slate-400">
-                    Showing {(page - 1) * 15 + 1}–{Math.min(page * 15, data.total)} of {data.total}
+                    {(page - 1) * 15 + 1}–{Math.min(page * 15, data.total)} of {data.total}
                   </span>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Prev</Button>

@@ -78,7 +78,7 @@ export default function UsersPage() {
   return (
     <>
       <Topbar title="User Management" />
-      <main className="flex-1 p-6 space-y-6">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
         <div className="flex justify-end">
           <Button icon={<Plus className="w-4 h-4" />} onClick={() => { setEditing(undefined); setModalOpen(true); }}>
             Add User
@@ -91,45 +91,81 @@ export default function UsersPage() {
               <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Name</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Email</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Role</th>
-                    <th className="text-left py-3 px-4 text-slate-400 font-medium">Status</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => (
-                    <tr key={u.id} className="border-b border-slate-800 hover:bg-slate-800/30">
-                      <td className="py-3 px-4 font-medium text-white">{u.name}</td>
-                      <td className="py-3 px-4 text-slate-300">{u.email}</td>
-                      <td className="py-3 px-4">
-                        <Badge variant={u.role === 'ADMIN' ? 'info' : 'default'}>{u.role}</Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setEditing(u); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded">
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          {me?.id !== u.id && (
-                            <button onClick={() => deleteMut.mutate(u.id)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded">
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+            <>
+              {/* Mobile cards */}
+              <div className="sm:hidden space-y-3">
+                {users.map(u => (
+                  <div key={u.id} className="bg-dark-900 border border-slate-700/50 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-primary-600/20 flex items-center justify-center text-primary-400 text-sm font-semibold shrink-0">
+                          {u.name?.charAt(0).toUpperCase()}
                         </div>
-                      </td>
+                        <div className="min-w-0">
+                          <p className="font-medium text-white truncate">{u.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => { setEditing(u); setModalOpen(true); }} className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        {me?.id !== u.id && (
+                          <button onClick={() => deleteMut.mutate(u.id)} className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Badge variant={u.role === 'ADMIN' ? 'info' : 'default'}>{u.role}</Badge>
+                      <Badge variant={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Name</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Email</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Role</th>
+                      <th className="text-left py-3 px-4 text-slate-400 font-medium">Status</th>
+                      <th className="py-3 px-4" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {users.map(u => (
+                      <tr key={u.id} className="border-b border-slate-800 hover:bg-slate-800/30">
+                        <td className="py-3 px-4 font-medium text-white">{u.name}</td>
+                        <td className="py-3 px-4 text-slate-300">{u.email}</td>
+                        <td className="py-3 px-4">
+                          <Badge variant={u.role === 'ADMIN' ? 'info' : 'default'}>{u.role}</Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge variant={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={() => { setEditing(u); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            {me?.id !== u.id && (
+                              <button onClick={() => deleteMut.mutate(u.id)} className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-900/20 rounded">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </Card>
 

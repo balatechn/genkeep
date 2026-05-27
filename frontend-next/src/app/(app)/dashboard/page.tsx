@@ -54,15 +54,15 @@ export default function DashboardPage() {
   return (
     <>
       <Topbar title="Dashboard" />
-      <main className="flex-1 p-6 space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <main className="flex-1 p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon={Database}      label="Total Entities"     value={data?.totalEntities ?? 0}     color="bg-primary-600" />
           <StatCard icon={KeyRound}      label="Total Credentials"  value={data?.totalCredentials ?? 0}  color="bg-emerald-600" />
           <StatCard icon={AlertTriangle} label="Expiring (30 days)" value={data?.expiringSoon ?? 0}      color="bg-amber-600" />
           <StatCard icon={Clock}         label="Recently Updated"   value={data?.recentlyUpdated?.length ?? 0} color="bg-blue-600" />
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
           <Card title="Recently Updated">
             {data?.recentlyUpdated?.length ? (
               <div className="space-y-3">
