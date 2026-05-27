@@ -38,6 +38,10 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     expose:
       - "4000"
+    networks:
+      default:
+        aliases:
+          - backend
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/api/health"]
       interval: 30s
@@ -61,8 +65,6 @@ services:
         aliases:
           - genkeep-frontend
       default: {}
-    volumes:
-      - debug_share:/usr/share/nginx/html/debug
     labels:
       - "traefik.enable=true"
 
@@ -76,33 +78,13 @@ services:
       TRAEFIK_CONFIG_B64: "aHR0cDoNCiAgcm91dGVyczoNCiAgICBnZW5rZWVwLWZyb250ZW5kOg0KICAgICAgcnVsZTogIkhvc3QoYHZnMmZ1emhoYXlqbTNud28zY21sem5wZC4xODcuMTI3LjEzNC4yNDYuc3NsaXAuaW9gKSINCiAgICAgIHNlcnZpY2U6IGdlbmtlZXAtZnJvbnRlbmQNCiAgICAgIGVudHJ5UG9pbnRzOg0KICAgICAgICAtIGh0dHANCiAgICAgIHByaW9yaXR5OiAxMDAwDQogIHNlcnZpY2VzOg0KICAgIGdlbmtlZXAtZnJvbnRlbmQ6DQogICAgICBsb2FkQmFsYW5jZXI6DQogICAgICAgIHNlcnZlcnM6DQogICAgICAgICAgLSB1cmw6ICJodHRwOi8vZ2Vua2VlcC1mcm9udGVuZDo4MCINCg=="
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - debug_share:/share
     command: >
       sh -c "sleep 10;
              echo \"$$TRAEFIK_CONFIG_B64\" | base64 -d > /tmp/cfg.yaml;
              docker exec coolify-proxy rm -rf /traefik/dynamic/genkeep-frontend.yaml 2>/dev/null;
-             docker cp /tmp/cfg.yaml coolify-proxy:/traefik/dynamic/genkeep-frontend.yaml && echo 'traefik config installed' || echo 'install failed';
-             sleep 20;
-             OUT=/share/info.txt;
-             echo '=== containers ===' > $$OUT;
-             docker ps -a --filter name=vg2fuzh --format '{{.Names}}\t{{.Status}}' >> $$OUT;
-             BE=$$(docker ps -a --filter name=backend-vg2fuzh --format '{{.Names}}' | head -1);
-             FE=$$(docker ps --filter name=frontend-vg2fuzh --format '{{.Names}}' | head -1);
-             echo \"BE=$$BE FE=$$FE\" >> $$OUT;
-             echo '=== backend logs ===' >> $$OUT;
-             docker logs --tail 60 $$BE >> $$OUT 2>&1;
-             echo '=== backend networks ===' >> $$OUT;
-             docker inspect $$BE --format '{{range \\$$k, \\$$v := .NetworkSettings.Networks}}{{\\$$k}} ip={{\\$$v.IPAddress}}{{println}}{{end}}' >> $$OUT 2>&1;
-             echo '=== frontend networks ===' >> $$OUT;
-             docker inspect $$FE --format '{{range \\$$k, \\$$v := .NetworkSettings.Networks}}{{\\$$k}} ip={{\\$$v.IPAddress}}{{println}}{{end}}' >> $$OUT 2>&1;
-             echo '=== frontend nslookup backend ===' >> $$OUT;
-             docker exec $$FE sh -c 'getent hosts backend; wget -qSO- http://backend:4000/api/health 2>&1 | head -10' >> $$OUT 2>&1;
-             chmod 644 $$OUT;
-             sleep 5"
+             docker cp /tmp/cfg.yaml coolify-proxy:/traefik/dynamic/genkeep-frontend.yaml && echo 'traefik config installed' || echo 'install failed';"
 
 volumes:
-  debug_share:
-    driver: local
   postgres_data:
     driver: local
 
