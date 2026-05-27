@@ -60,6 +60,7 @@ services:
       coolify:
         aliases:
           - genkeep-frontend
+      default: {}
     labels:
       - "traefik.enable=true"
 
@@ -85,4 +86,7 @@ volumes:
 
 networks:
   coolify:
+    external: true
+  default:
+    name: vg2fuzhhayjm3nwo3cmlznpd
     external: true
