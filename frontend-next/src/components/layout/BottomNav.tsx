@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { cn } from '@/utils';
 import { useAuthStore } from '@/store/auth.store';
-import { useUIStore } from '@/store/ui.store';
 import { authApi } from '@/api';
 import { useRouter } from 'next/navigation';
 import {
