@@ -175,6 +175,7 @@ function CredentialCard({ cred, onEdit, onDelete, isAdmin }: {
     </div>
   );
 }
+function CredentialForm({ initial, entities, onSave, onClose }: {
   initial?: Credential; entities: Entity[]; onSave: (data: unknown) => void; onClose: () => void;
 }) {
   const [form, setForm] = useState({
