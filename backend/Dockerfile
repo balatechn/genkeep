@@ -9,7 +9,8 @@ RUN npm run build
 
 FROM node:20-alpine AS runtime
 
-RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001
+RUN apk add --no-cache netcat-openbsd && \
+    addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001
 
 WORKDIR /app
 COPY package*.json ./
