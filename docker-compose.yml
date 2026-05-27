@@ -3,7 +3,6 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: genkeep_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-genkeep}
@@ -22,7 +21,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: genkeep_backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -38,10 +36,6 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
     expose:
       - "4000"
-    networks:
-      default:
-        aliases:
-          - backend
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/api/health"]
       interval: 30s
@@ -54,7 +48,6 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
-    container_name: genkeep_frontend
     restart: unless-stopped
     depends_on:
       - backend
@@ -70,7 +63,6 @@ services:
 
   traefik-config-loader:
     image: docker:24-cli
-    container_name: genkeep_traefik_loader
     restart: "no"
     depends_on:
       - frontend

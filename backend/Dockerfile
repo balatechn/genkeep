@@ -15,8 +15,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
+# Copy pre-built Prisma engines from builder so runtime never needs to generate/write them
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 COPY prisma ./prisma
+# Fix ownership so nodeuser can read all app files
+RUN chown -R nodeuser:nodejs /app
 
 USER nodeuser
 EXPOSE 4000
