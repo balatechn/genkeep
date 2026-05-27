@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { toolsApi } from '@/api';
+import { toolsApi, credentialsApi, entitiesApi } from '@/api';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Modal from '@/components/ui/Modal';
 import Topbar from '@/components/layout/Topbar';
-import { Copy, RefreshCw, Wand2 } from 'lucide-react';
+import { Copy, RefreshCw, Wand2, Save } from 'lucide-react';
 import { copyToClipboard, cn } from '@/utils';
 import toast from 'react-hot-toast';
+import type { Entity } from '@/types';
 
 function StrengthBar({ password }: { password: string }) {
   const score = getScore(password);
@@ -58,6 +61,14 @@ export default function GeneratorPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Save-to-vault state
+  const [nameUrl, setNameUrl] = useState('');
+  const [loginId, setLoginId] = useState('');
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [entities, setEntities] = useState<Entity[]>([]);
+  const [entityId, setEntityId] = useState('');
+  const [saving, setSaving] = useState(false);
+
   function set(k: string) {
     return (v: boolean | number) => setOptions(o => ({ ...o, [k]: v }));
   }
@@ -76,12 +87,61 @@ export default function GeneratorPage() {
     toast.success('Copied! Clears in 20s');
   }
 
+  async function openSave() {
+    if (!password) { toast.error('Generate a password first'); return; }
+    if (!nameUrl.trim()) { toast.error('Enter a name or URL'); return; }
+    if (!loginId.trim()) { toast.error('Enter a login ID'); return; }
+    try {
+      const res = await entitiesApi.list();
+      setEntities(res.data);
+      setEntityId('');
+      setSaveOpen(true);
+    } catch { toast.error('Could not load entities'); }
+  }
+
+  async function handleSave() {
+    if (!entityId) { toast.error('Select an entity'); return; }
+    setSaving(true);
+    try {
+      const isUrl = /^https?:\/\//.test(nameUrl) || /\.[a-z]{2,}(\/|$)/i.test(nameUrl);
+      await credentialsApi.create({
+        entityId,
+        title:    nameUrl,
+        urlOrIp:  isUrl ? nameUrl : undefined,
+        username: loginId,
+        password,
+      });
+      toast.success('Saved to vault!');
+      setSaveOpen(false);
+      setNameUrl('');
+      setLoginId('');
+      setPassword('');
+    } catch { toast.error('Failed to save'); }
+    finally { setSaving(false); }
+  }
+
   return (
     <>
       <Topbar title="Password Generator" />
       <main className="flex-1 p-6">
         <div className="max-w-lg mx-auto space-y-6">
           <Card title="Password Generator">
+            {/* Name / URL + Login ID */}
+            <div className="space-y-3 mb-4">
+              <Input
+                label="Name / URL"
+                placeholder="e.g. GitHub or https://github.com"
+                value={nameUrl}
+                onChange={e => setNameUrl(e.target.value)}
+              />
+              <Input
+                label="Login ID"
+                placeholder="Username or email"
+                value={loginId}
+                onChange={e => setLoginId(e.target.value)}
+              />
+            </div>
+
             <div className="bg-dark-950 border border-slate-700 rounded-xl p-4 mb-4 min-h-[60px] flex items-center justify-between gap-3">
               <span className="font-mono text-base text-white break-all flex-1">
                 {password || <span className="text-slate-500">Click Generate…</span>}
@@ -125,9 +185,52 @@ export default function GeneratorPage() {
                 </Button>
               )}
             </div>
+
+            {/* Save to Vault */}
+            <div className="mt-3">
+              <Button
+                variant="secondary"
+                className="w-full justify-center border-emerald-600 text-emerald-400 hover:bg-emerald-900/30"
+                icon={<Save className="w-4 h-4" />}
+                onClick={openSave}
+              >
+                Save to Vault
+              </Button>
+            </div>
           </Card>
         </div>
       </main>
+
+      {/* Entity picker modal */}
+      <Modal open={saveOpen} onClose={() => setSaveOpen(false)} title="Save to Vault" size="sm">
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-slate-400 mb-1">Name / URL</p>
+            <p className="text-sm text-white font-medium truncate">{nameUrl}</p>
+          </div>
+          <div>
+            <p className="text-sm text-slate-400 mb-1">Login ID</p>
+            <p className="text-sm text-white font-medium">{loginId}</p>
+          </div>
+          <div>
+            <label className="label">Entity <span className="text-red-400">*</span></label>
+            <select
+              className="input"
+              value={entityId}
+              onChange={e => setEntityId(e.target.value)}
+            >
+              <option value="">— select entity —</option>
+              {entities.map(e => (
+                <option key={e.id} value={e.id}>{e.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button variant="secondary" className="flex-1 justify-center" onClick={() => setSaveOpen(false)}>Cancel</Button>
+            <Button className="flex-1 justify-center" loading={saving} onClick={handleSave}>Save</Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }
