@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import Sidebar from '@/components/layout/Sidebar';
@@ -9,12 +9,17 @@ import Topbar from '@/components/layout/Topbar';
 export default function AppShell({ children, title }: { children: React.ReactNode; title: string }) {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/login');
-  }, [isAuthenticated, router]);
+    setHydrated(true);
+  }, []);
 
-  if (!isAuthenticated) return null;
+  useEffect(() => {
+    if (hydrated && !isAuthenticated) router.replace('/login');
+  }, [hydrated, isAuthenticated, router]);
+
+  if (!hydrated || !isAuthenticated) return null;
 
   return (
     <div className="flex h-screen bg-dark-950 text-white overflow-hidden">
