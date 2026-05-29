@@ -25,6 +25,7 @@ const createSchema = Joi.object({
 });
 
 const updateSchema = Joi.object({
+  entityId:   Joi.string().uuid(),
   title:      Joi.string().min(1).max(200),
   urlOrIp:    Joi.string().max(500).allow('', null),
   username:   Joi.string().min(1).max(200),

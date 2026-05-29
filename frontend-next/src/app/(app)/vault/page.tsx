@@ -227,7 +227,7 @@ function CredentialForm({ initial, entities, onSave, onClose }: {
           onClick={() => onSave({
             entityId: form.entityId, title: form.title, urlOrIp: form.urlOrIp || null,
             username: form.username, ...(form.password && { password: form.password }),
-            notes: form.notes || null, expiryDate: form.expiryDate || null,
+            ...(form.notes ? { notes: form.notes } : {}), expiryDate: form.expiryDate || null,
             tags: form.tags ? form.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
           })}
           disabled={!form.entityId || !form.title || !form.username || (!initial && !form.password)}
@@ -266,6 +266,7 @@ export default function VaultPage() {
   const updateMut = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) => credentialsApi.update(id, data),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['credentials'] }); setModalOpen(false); setEditing(undefined); toast.success('Updated'); },
+    onError: () => toast.error('Failed to update credential'),
   });
 
   const deleteMut = useMutation({

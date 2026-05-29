@@ -136,7 +136,7 @@ export async function createCredential(req: AuthRequest, res: Response, next: Ne
 
 export async function updateCredential(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
-    const { title, urlOrIp, username, password, notes, expiryDate } = req.body;
+    const { entityId, title, urlOrIp, username, password, notes, expiryDate } = req.body;
     const existing = await prisma.credential.findUnique({ where: { id: req.params.id } });
     if (!existing) { res.status(404).json({ error: 'Credential not found' }); return; }
 
@@ -146,19 +146,18 @@ export async function updateCredential(req: AuthRequest, res: Response, next: Ne
       pwFields = { passwordEncrypted: ciphertext, passwordIv: iv, passwordTag: tag };
     }
 
+    // Only update notes when a non-empty string is explicitly provided
+    // (blank form field means "keep existing notes", not "erase them")
     let notesFields = {};
-    if (notes !== undefined) {
-      if (notes) {
-        const enc = encrypt(notes);
-        notesFields = { notesEncrypted: enc.ciphertext, notesIv: enc.iv, notesTag: enc.tag };
-      } else {
-        notesFields = { notesEncrypted: null, notesIv: null, notesTag: null };
-      }
+    if (notes) {
+      const enc = encrypt(notes);
+      notesFields = { notesEncrypted: enc.ciphertext, notesIv: enc.iv, notesTag: enc.tag };
     }
 
     const updated = await prisma.credential.update({
       where: { id: req.params.id },
       data: {
+        ...(entityId && { entityId }),
         ...(title && { title }),
         ...(urlOrIp !== undefined && { urlOrIp }),
         ...(username && { username }),
