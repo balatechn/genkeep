@@ -13,7 +13,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       theme: 'dark',
-      sidebarOpen: true,
+      sidebarOpen: false,
       toggleTheme: () =>
         set((s) => {
           const next = s.theme === 'dark' ? 'light' : 'dark';
