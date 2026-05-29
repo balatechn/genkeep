@@ -8,15 +8,15 @@ import { useAuthStore } from '@/store/auth.store';
 import { authApi } from '@/api';
 import { useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, KeyRound, Wand2, BarChart3, MoreHorizontal,
-  Users, Settings, Database, LogOut, X,
+  LayoutDashboard, KeyRound, Wand2, MoreHorizontal,
+  Users, Settings, Database, LogOut, X, ClipboardList,
 } from 'lucide-react';
 
 const mainNav = [
   { href: '/dashboard',  label: 'Dashboard', icon: LayoutDashboard },
   { href: '/vault',      label: 'Vault',     icon: KeyRound },
   { href: '/generator',  label: 'Generate',  icon: Wand2 },
-  { href: '/reports',    label: 'Reports',   icon: BarChart3 },
+  { href: '/entities',   label: 'Entities',  icon: Database },
 ];
 
 export default function BottomNav() {
@@ -61,17 +61,16 @@ export default function BottomNav() {
               </button>
             </div>
 
-            <Link
-              href="/entities"
-              onClick={() => setMenuOpen(false)}
-              className={cn('flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors',
-                isActive('/entities') ? 'bg-primary-600/20 text-primary-400' : 'text-slate-300 hover:bg-slate-700')}
-            >
-              <Database className="w-5 h-5" /> Entities
-            </Link>
-
             {user?.role === 'ADMIN' && (
               <>
+                <Link
+                  href="/audit-log"
+                  onClick={() => setMenuOpen(false)}
+                  className={cn('flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-colors',
+                    isActive('/audit-log') ? 'bg-primary-600/20 text-primary-400' : 'text-slate-300 hover:bg-slate-700')}
+                >
+                  <ClipboardList className="w-5 h-5" /> Audit Log
+                </Link>
                 <Link
                   href="/users"
                   onClick={() => setMenuOpen(false)}

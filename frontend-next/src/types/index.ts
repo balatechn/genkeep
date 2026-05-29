@@ -59,9 +59,11 @@ export interface ActivityLog {
   action: string;
   targetType?: string;
   targetId?: string;
+  description?: string;
+  ipAddress?: string;
   metadata?: Record<string, unknown>;
   createdAt: string;
-  user?: { name: string; email: string };
+  user?: { id?: string; name: string; email: string };
 }
 
 export interface PaginatedResponse<T> {
